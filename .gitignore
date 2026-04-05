@@ -11,3 +11,4 @@ env/
 dist/
 build/
 .pytest_cache/
+_site/

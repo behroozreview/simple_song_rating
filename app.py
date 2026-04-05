@@ -115,7 +115,7 @@ def index():
 # Admin views
 # ---------------------------------------------------------------------------
 
-@app.route("/admin")
+@app.route("/admin/")
 def admin():
     sort, order_dir = _safe_sort_params(
         request.args.get("sort", "date_added"),
@@ -147,12 +147,12 @@ def add_song():
         if not name:
             errors.append("Song name is required.")
         try:
-            rate_val = float(rate)
-            if not (0 <= rate_val <= 10):
-                errors.append("Rate must be between 0 and 10.")
+            rate_val = int(rate)
+            if not (0 <= rate_val <= 9):
+                errors.append("Rate must be between 0 and 9.")
         except ValueError:
             errors.append("Rate must be a number.")
-            rate_val = 0.0
+            rate_val = 0
 
         if errors:
             for e in errors:
@@ -188,12 +188,12 @@ def edit_song(song_id):
         if not name:
             errors.append("Song name is required.")
         try:
-            rate_val = float(rate)
-            if not (0 <= rate_val <= 10):
-                errors.append("Rate must be between 0 and 10.")
+            rate_val = int(rate)
+            if not (0 <= rate_val <= 9):
+                errors.append("Rate must be between 0 and 9.")
         except ValueError:
             errors.append("Rate must be a number.")
-            rate_val = 0.0
+            rate_val = 0
 
         if errors:
             for e in errors:
@@ -267,8 +267,8 @@ def upload_csv():
                 skipped += 1
                 continue
             try:
-                rate_val = float(rate_raw)
-                if not (0 <= rate_val <= 10):
+                rate_val = int(float(rate_raw))
+                if not (0 <= rate_val <= 9):
                     skipped += 1
                     continue
             except ValueError:

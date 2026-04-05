@@ -49,7 +49,7 @@ class TestPublicView:
     def test_song_appears(self, client):
         client.post(
             "/admin/add",
-            data={"name": "Test Song", "rate": "7.5", "url": ""},
+            data={"name": "Test Song", "rate": "7", "url": ""},
         )
         r = client.get("/")
         assert b"Test Song" in r.data
@@ -81,17 +81,17 @@ class TestPublicView:
 
 class TestAdminView:
     def test_admin_empty(self, client):
-        r = client.get("/admin")
+        r = client.get("/admin/")
         assert r.status_code == 200
         assert b"No songs yet" in r.data
 
     def test_admin_shows_songs(self, client):
         client.post("/admin/add", data={"name": "My Song", "rate": "6", "url": ""})
-        r = client.get("/admin")
+        r = client.get("/admin/")
         assert b"My Song" in r.data
 
     def test_admin_sorting(self, client):
-        r = client.get("/admin?sort=rate&order=asc")
+        r = client.get("/admin/?sort=rate&order=asc")
         assert r.status_code == 200
 
 
@@ -108,7 +108,7 @@ class TestAddSong:
     def test_add_valid(self, client):
         r = client.post(
             "/admin/add",
-            data={"name": "Bohemian Rhapsody", "rate": "9.5", "url": "https://example.com"},
+            data={"name": "Bohemian Rhapsody", "rate": "9", "url": "https://example.com"},
             follow_redirects=True,
         )
         assert r.status_code == 200
@@ -134,10 +134,10 @@ class TestAddSong:
     def test_add_invalid_rate_too_high(self, client):
         r = client.post(
             "/admin/add",
-            data={"name": "Bad Song", "rate": "11", "url": ""},
+            data={"name": "Bad Song", "rate": "10", "url": ""},
             follow_redirects=True,
         )
-        assert b"Rate must be between 0 and 10" in r.data
+        assert b"Rate must be between 0 and 9" in r.data
 
     def test_add_invalid_rate_negative(self, client):
         r = client.post(
@@ -145,7 +145,7 @@ class TestAddSong:
             data={"name": "Bad Song", "rate": "-1", "url": ""},
             follow_redirects=True,
         )
-        assert b"Rate must be between 0 and 10" in r.data
+        assert b"Rate must be between 0 and 9" in r.data
 
     def test_add_non_numeric_rate(self, client):
         r = client.post(
@@ -224,7 +224,7 @@ class TestCsvUpload:
         assert b"CSV" in r.data
 
     def test_upload_valid_csv(self, client):
-        csv_data = b"name,rate,url\nBohemian Rhapsody,9.5,https://example.com\nHotel California,8.8,\n"
+        csv_data = b"name,rate,url\nBohemian Rhapsody,9,https://example.com\nHotel California,8,\n"
         r = client.post(
             "/admin/upload",
             data={"csv_file": (io.BytesIO(csv_data), "songs.csv")},

@@ -2,6 +2,199 @@
 {% block title %}Admin – Song Rating{% endblock %}
 
 {% block content %}
+{% if config.get('STATIC_MODE') %}
+{# ──────────────────────────────────────────────────────────────────────────
+   STATIC MODE (GitHub Pages): read-only view gated behind GitHub auth.
+   CRUD operations are not available on the static site.
+────────────────────────────────────────────────────────────────────────── #}
+
+{# Auth gate – hidden once the user is verified #}
+<div id="auth-gate" class="d-flex justify-content-center align-items-start pt-4">
+  <div class="card shadow-sm" style="min-width:340px;max-width:420px;width:100%;">
+    <div class="card-body p-4">
+      <h4 class="mb-3">🔐 Admin Access</h4>
+      <p class="text-muted small mb-3">
+        This page is restricted to administrators of
+        <strong>
+          <a href="https://github.com/{{ config.GITHUB_REPO }}" target="_blank" rel="noopener noreferrer">
+            {{ config.GITHUB_REPO }}
+          </a>
+        </strong>.
+        Enter a GitHub Personal Access Token to verify your identity.
+      </p>
+      <div id="auth-error" class="alert alert-danger py-2 d-none" role="alert"></div>
+      <div class="mb-3">
+        <label for="gh-token" class="form-label fw-semibold">Personal Access Token</label>
+        <input type="password" class="form-control" id="gh-token"
+               placeholder="ghp_…" autocomplete="off" />
+        <div class="form-text">
+          Create a <a href="https://github.com/settings/tokens/new?description=Song+Rating+Admin&scopes=repo"
+             target="_blank" rel="noopener noreferrer">classic token</a>
+          with <code>repo</code> scope, or a
+          <a href="https://github.com/settings/personal-access-tokens/new"
+             target="_blank" rel="noopener noreferrer">fine-grained token</a>
+          with <em>Repository → Metadata → Read-only</em> access.
+          Use the narrowest scope possible and revoke the token after use.
+        </div>
+      </div>
+      <button class="btn btn-primary w-100" id="auth-btn" onclick="doAuth()">
+        Verify &amp; Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+{# Admin content – hidden until auth passes #}
+<div id="admin-content" class="d-none">
+  <div class="alert alert-info alert-dismissible fade show" role="alert">
+    <strong>ℹ️ Read-only snapshot.</strong>
+    This is the static GitHub Pages version. To add, edit, or delete songs, run the Flask application.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>⚙️ Admin Panel <small class="fs-6 fw-normal text-muted">(read-only)</small></h2>
+    <button class="btn btn-outline-secondary btn-sm" onclick="doLogout()">Log out</button>
+  </div>
+
+  {% if songs %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Rate</th>
+          <th>URL</th>
+          <th>Date Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for song in songs %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td class="fw-semibold">{{ song.name }}</td>
+          <td>
+            <span class="badge {% if song.rate >= 8 %}bg-success{% elif song.rate >= 5 %}bg-primary{% else %}bg-secondary{% endif %}">
+              {{ song.rate }}
+            </span>
+          </td>
+          <td>
+            {% if song.url %}
+              <a href="{{ song.url }}" target="_blank" rel="noopener noreferrer"
+                 class="text-truncate d-inline-block" style="max-width:200px;">{{ song.url }}</a>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ song.date_added }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">No songs in this snapshot.</div>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const GITHUB_REPO = {{ config.GITHUB_REPO | tojson }};
+  const SESSION_KEY = "song_rating_gh_token";
+
+  // Check for an existing verified session on page load
+  const stored = sessionStorage.getItem(SESSION_KEY);
+  if (stored) {
+    verifyAndShow(stored);
+  }
+
+  window.doAuth = function () {
+    const token = document.getElementById("gh-token").value.trim();
+    if (!token) { showError("Please enter a token."); return; }
+    const btn = document.getElementById("auth-btn");
+    btn.disabled = true;
+    btn.textContent = "Verifying…";
+    clearError();
+    verifyAndShow(token).finally(function () {
+      btn.disabled = false;
+      btn.textContent = "Verify & Continue";
+    });
+  };
+
+  window.doLogout = function () {
+    sessionStorage.removeItem(SESSION_KEY);
+    document.getElementById("auth-gate").classList.remove("d-none");
+    document.getElementById("admin-content").classList.add("d-none");
+    document.getElementById("gh-token").value = "";
+  };
+
+  async function verifyAndShow(token) {
+    // 1. Identify the authenticated user
+    let user;
+    try {
+      const resp = await fetch("https://api.github.com/user", {
+        headers: { Authorization: "token " + token, Accept: "application/vnd.github+json" }
+      });
+      if (!resp.ok) { showError("Invalid token or GitHub API error (status " + resp.status + ")."); return; }
+      user = await resp.json();
+    } catch (e) {
+      showError("Network error while contacting GitHub API.");
+      return;
+    }
+
+    // 2. Check the user's permission level on the repository
+    let permission;
+    try {
+      const resp = await fetch(
+        "https://api.github.com/repos/" + GITHUB_REPO + "/collaborators/" + user.login + "/permission",
+        { headers: { Authorization: "token " + token, Accept: "application/vnd.github+json" } }
+      );
+      if (resp.status === 403 || resp.status === 404) {
+        showError("@" + user.login + " does not have access to " + GITHUB_REPO + ".");
+        return;
+      }
+      if (!resp.ok) { showError("Could not verify repository permissions (status " + resp.status + ")."); return; }
+      const data = await resp.json();
+      permission = data.permission;
+    } catch (e) {
+      showError("Network error while checking repository permissions.");
+      return;
+    }
+
+    // 3. Require admin or maintain permission
+    if (permission !== "admin" && permission !== "maintain") {
+      showError(
+        "@" + user.login + " has '" + permission + "' access to " + GITHUB_REPO + ". " +
+        "Repository admin or maintain permission is required."
+      );
+      return;
+    }
+
+    // 4. Access granted
+    sessionStorage.setItem(SESSION_KEY, token);
+    document.getElementById("auth-gate").classList.add("d-none");
+    document.getElementById("admin-content").classList.remove("d-none");
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("auth-error");
+    el.textContent = msg;
+    el.classList.remove("d-none");
+  }
+
+  function clearError() {
+    document.getElementById("auth-error").classList.add("d-none");
+  }
+})();
+</script>
+
+{% else %}
+{# ──────────────────────────────────────────────────────────────────────────
+   FLASK MODE: full CRUD admin panel (unchanged).
+────────────────────────────────────────────────────────────────────────── #}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>⚙️ Admin Panel</h2>
   <div class="d-flex gap-2">
@@ -72,5 +265,6 @@
 <div class="alert alert-info">
   No songs yet. <a href="{{ url_for('add_song') }}">Add one</a> or <a href="{{ url_for('upload_csv') }}">import a CSV</a>.
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

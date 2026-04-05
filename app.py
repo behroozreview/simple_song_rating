@@ -115,7 +115,7 @@ def index():
 # Admin views
 # ---------------------------------------------------------------------------
 
-@app.route("/admin")
+@app.route("/admin/")
 def admin():
     sort, order_dir = _safe_sort_params(
         request.args.get("sort", "date_added"),

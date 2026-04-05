@@ -81,17 +81,17 @@ class TestPublicView:
 
 class TestAdminView:
     def test_admin_empty(self, client):
-        r = client.get("/admin")
+        r = client.get("/admin/")
         assert r.status_code == 200
         assert b"No songs yet" in r.data
 
     def test_admin_shows_songs(self, client):
         client.post("/admin/add", data={"name": "My Song", "rate": "6", "url": ""})
-        r = client.get("/admin")
+        r = client.get("/admin/")
         assert b"My Song" in r.data
 
     def test_admin_sorting(self, client):
-        r = client.get("/admin?sort=rate&order=asc")
+        r = client.get("/admin/?sort=rate&order=asc")
         assert r.status_code == 200
 
 

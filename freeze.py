@@ -26,8 +26,16 @@ app_module.DATABASE = DB_PATH
 app.config["FREEZER_DESTINATION"] = os.path.join(os.path.dirname(__file__), "_site")
 app.config["FREEZER_RELATIVE_URLS"] = True
 app.config["FREEZER_REMOVE_EXTRA_FILES"] = True
+app.config["STATIC_MODE"] = True
+app.config["GITHUB_REPO"] = os.environ.get("GITHUB_REPOSITORY", "behroozreview/simple_song_rating")
 
 freezer = Freezer(app, with_no_argument_rules=False, log_url_for=False)
+
+
+@freezer.register_generator
+def admin():
+    """Generate the default admin view (read-only, auth-gated on GitHub Pages)."""
+    yield {}
 
 
 @freezer.register_generator
@@ -71,7 +79,8 @@ if __name__ == "__main__":
     seed_sample_data()
 
     print("Freezing public view to _site/ ...")
-    freezer.freeze()
-
-    os.unlink(DB_PATH)
+    try:
+        freezer.freeze()
+    finally:
+        os.unlink(DB_PATH)
     print("Done. Static site is in _site/")

@@ -32,6 +32,8 @@ jobs:
 
       - name: Generate static site
         run: python freeze.py
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Songs – Public View{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>🎵 Song List</h2>
+  <small class="text-muted">{{ songs|length }} song{{ 's' if songs|length != 1 }}</small>
+</div>
+
+{% if songs %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>
+          <a href="{{ url_for('index', sort='name', order=toggle('name')) }}" class="text-white text-decoration-none">
+            Name
+            {% if sort == 'name' %}
+              <span>{{ '▲' if order == 'asc' else '▼' }}</span>
+            {% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="{{ url_for('index', sort='rate', order=toggle('rate')) }}" class="text-white text-decoration-none">
+            Rate
+            {% if sort == 'rate' %}
+              <span>{{ '▲' if order == 'asc' else '▼' }}</span>
+            {% endif %}
+          </a>
+        </th>
+        <th>URL</th>
+        <th>
+          <a href="{{ url_for('index', sort='date_added', order=toggle('date_added')) }}" class="text-white text-decoration-none">
+            Date Added
+            {% if sort == 'date_added' %}
+              <span>{{ '▲' if order == 'asc' else '▼' }}</span>
+            {% endif %}
+          </a>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for song in songs %}
+      <tr>
+        <td class="text-muted">{{ loop.index }}</td>
+        <td class="fw-semibold">{{ song.name }}</td>
+        <td>
+          <span class="badge {% if song.rate >= 8 %}bg-success{% elif song.rate >= 5 %}bg-primary{% else %}bg-secondary{% endif %} fs-6">
+            {{ "%.1f"|format(song.rate) }}
+          </span>
+        </td>
+        <td>
+          {% if song.url %}
+            <a href="{{ song.url }}" target="_blank" rel="noopener noreferrer">Listen ↗</a>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td class="text-muted small">{{ song.date_added }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No songs yet. Check back later!</div>
+{% endif %}
+{% endblock %}

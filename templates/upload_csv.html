@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Import CSV – Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <h2 class="mb-4">📥 Bulk Import via CSV</h2>
+
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">CSV Format</div>
+      <div class="card-body">
+        <p class="mb-1">Your CSV file must have a header row with at least these columns:</p>
+        <ul class="mb-2">
+          <li><code>name</code> – Song name (required)</li>
+          <li><code>rate</code> – Numeric rating 0–10 (required)</li>
+          <li><code>url</code> – Link to the song (optional)</li>
+        </ul>
+        <p class="mb-0 text-muted small">Example:</p>
+        <pre class="bg-light rounded p-2 mb-0 small">name,rate,url
+Bohemian Rhapsody,9.5,https://youtu.be/example1
+Hotel California,8.8,https://youtu.be/example2
+Stairway to Heaven,9.2,</pre>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      <div class="mb-4">
+        <label for="csv_file" class="form-label fw-semibold">Choose CSV file</label>
+        <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required />
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Import</button>
+        <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

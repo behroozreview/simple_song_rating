@@ -11,9 +11,9 @@
         <input type="text" class="form-control" id="name" name="name" value="{{ name }}" required autofocus />
       </div>
       <div class="mb-3">
-        <label for="rate" class="form-label fw-semibold">Rate (0 – 10) <span class="text-danger">*</span></label>
+        <label for="rate" class="form-label fw-semibold">Rate (0 – 9) <span class="text-danger">*</span></label>
         <input type="number" class="form-control" id="rate" name="rate" value="{{ rate }}"
-               min="0" max="10" step="0.1" required />
+               min="0" max="9" step="1" required />
       </div>
       <div class="mb-4">
         <label for="url" class="form-label fw-semibold">URL <span class="text-muted">(optional)</span></label>

@@ -47,7 +47,7 @@
         <td class="fw-semibold">{{ song.name }}</td>
         <td>
           <span class="badge {% if song.rate >= 8 %}bg-success{% elif song.rate >= 5 %}bg-primary{% else %}bg-secondary{% endif %} fs-6">
-            {{ "%.1f"|format(song.rate) }}
+            {{ song.rate }}
           </span>
         </td>
         <td>

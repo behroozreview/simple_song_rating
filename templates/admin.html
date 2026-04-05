@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Admin – Song Rating{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>⚙️ Admin Panel</h2>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('upload_csv') }}" class="btn btn-outline-secondary">📥 Import CSV</a>
+    <a href="{{ url_for('add_song') }}" class="btn btn-primary">➕ Add Song</a>
+  </div>
+</div>
+
+{% if songs %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>
+          <a href="{{ url_for('admin', sort='name', order=toggle('name')) }}" class="text-white text-decoration-none">
+            Name
+            {% if sort == 'name' %}{{ '▲' if order == 'asc' else '▼' }}{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="{{ url_for('admin', sort='rate', order=toggle('rate')) }}" class="text-white text-decoration-none">
+            Rate
+            {% if sort == 'rate' %}{{ '▲' if order == 'asc' else '▼' }}{% endif %}
+          </a>
+        </th>
+        <th>URL</th>
+        <th>
+          <a href="{{ url_for('admin', sort='date_added', order=toggle('date_added')) }}" class="text-white text-decoration-none">
+            Date Added
+            {% if sort == 'date_added' %}{{ '▲' if order == 'asc' else '▼' }}{% endif %}
+          </a>
+        </th>
+        <th class="text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for song in songs %}
+      <tr>
+        <td class="text-muted">{{ loop.index }}</td>
+        <td class="fw-semibold">{{ song.name }}</td>
+        <td>
+          <span class="badge {% if song.rate >= 8 %}bg-success{% elif song.rate >= 5 %}bg-primary{% else %}bg-secondary{% endif %}">
+            {{ "%.1f"|format(song.rate) }}
+          </span>
+        </td>
+        <td>
+          {% if song.url %}
+            <a href="{{ song.url }}" target="_blank" rel="noopener noreferrer" class="text-truncate d-inline-block" style="max-width:200px;">{{ song.url }}</a>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td class="text-muted small">{{ song.date_added }}</td>
+        <td class="text-center">
+          <a href="{{ url_for('edit_song', song_id=song.id) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+          <form action="{{ url_for('delete_song', song_id=song.id) }}" method="post" class="d-inline"
+                onsubmit="return confirm('Delete \'{{ song.name }}\'?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  No songs yet. <a href="{{ url_for('add_song') }}">Add one</a> or <a href="{{ url_for('upload_csv') }}">import a CSV</a>.
+</div>
+{% endif %}
+{% endblock %}
